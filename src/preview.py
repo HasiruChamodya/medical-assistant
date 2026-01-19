@@ -16,7 +16,7 @@ for cls in train_classes:
     print(f"{cls}: {len(os.listdir(cls_path))} images")
 
 # 3. Visualize sample images from each class
-num_examples = 5
+num_examples = 2
 plt.figure(figsize=(8, 6))
 for i, cls in enumerate(train_classes):
     cls_path = os.path.join(train_dir, cls)
