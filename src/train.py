@@ -13,22 +13,32 @@ NUM_CLASSES = len(train_gen.class_indices)
 IMG_SIZE = (128, 128)
 
 if __name__ == "__main__":
-    # 1. Set up EfficientNetB0 base model
+    # 1. Load EfficientNetB0 base model, exclude top
     base_model = EfficientNetB0(weights='imagenet', include_top=False, input_shape=(IMG_SIZE[0], IMG_SIZE[1], 3))
-    base_model.trainable = False  # Freeze base model parameters
+    base_model.trainable = False  # Freeze all layers to start
+    
+    # 2. Unfreeze last N layers for fine-tuning
+    N = 20
+    for layer in base_model.layers[-N:]:
+        layer.trainable = True
 
-    # 2. Add custom head for classification
-    x = base_model.output
-    x = GlobalAveragePooling2D()(x)
+    # 3. Build classification head
+    x = GlobalAveragePooling2D()(base_model.output)
+    x = Dropout(0.3)(x)
+    x = Dense(128, activation='relu')(x)
     x = Dropout(0.3)(x)
     outputs = Dense(NUM_CLASSES, activation='softmax')(x)
     model = Model(inputs=base_model.input, outputs=outputs)
-    model.compile(optimizer=Adam(learning_rate=0.0005),
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
+
+    # 4. Compile with low learning rate (important for fine-tuning)
+    model.compile(
+        optimizer=Adam(learning_rate=1e-4),
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
     model.summary()
 
-    # 3. Callbacks
+    # 5. Callbacks
     checkpoint = ModelCheckpoint(
         "best_model.h5", monitor='val_accuracy', save_best_only=True, verbose=1
     )
@@ -37,7 +47,7 @@ if __name__ == "__main__":
     )
     callbacks = [checkpoint, early_stop]
 
-    # 4. Train
+    # 6. Training
     EPOCHS = 15
     history = model.fit(
         train_gen,
@@ -46,7 +56,7 @@ if __name__ == "__main__":
         callbacks=callbacks
     )
 
-    # 5. Training history plot
+    # 7. Plot training curves
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
     loss = history.history['loss']
@@ -63,7 +73,7 @@ if __name__ == "__main__":
     plt.legend(), plt.title("Loss")
     plt.show()
 
-    # 6. Model Evaluation
+    # 8. Model evaluation
     val_gen.reset()
     pred_probs = model.predict(val_gen)
     pred_classes = np.argmax(pred_probs, axis=1)
@@ -71,5 +81,5 @@ if __name__ == "__main__":
     cm = confusion_matrix(true_classes, pred_classes)
     print(classification_report(true_classes, pred_classes, target_names=list(val_gen.class_indices.keys())))
 
-    # 7. Save model (optional)
+    # 9. Save final model (optional, since best_model.h5 is already saved)
     model.save("final_model.h5")
