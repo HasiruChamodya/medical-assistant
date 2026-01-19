@@ -18,7 +18,7 @@ if __name__ == "__main__":
     base_model.trainable = False  # Freeze all layers to start
     
     # 2. Unfreeze last N layers for fine-tuning
-    N = 20
+    N = 50
     for layer in base_model.layers[-N:]:
         layer.trainable = True
 

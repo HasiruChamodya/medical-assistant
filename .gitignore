@@ -1,6 +1,4 @@
 #ignore dataset and output folders
-brain_tumor_dataset/
-data/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
