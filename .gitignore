@@ -1,0 +1,12 @@
+#ignore dataset and output folders
+brain_tumor_dataset/
+data/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+*.h5
+logs/
+*.log
+*.pth
+.vscode/
